@@ -1,11 +1,13 @@
 
 :root {
-  --bg: #050b16;
-  --card: rgba(5, 15, 31, 0.82);
-  --border: rgba(73, 190, 255, 0.38);
-  --text: #e9f7ff;
-  --muted: #aac3d8;
-  --accent: #28c7ff;
+  --bg: #e8eef5;
+  --card: rgba(255,255,255,0.78);
+  --border: rgba(73,190,255,0.25);
+
+  --text: #12365f;
+  --muted: #456b8f;
+
+  --accent: #2c7fff;
   --accent2: #7b61ff;
 }
 * { box-sizing: border-box; }
@@ -21,7 +23,7 @@ a { color: var(--accent); text-decoration: none; }
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(3, 8, 18, 0.9);
+  background: rgba(255,255,255,0.85);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
 }
@@ -74,7 +76,13 @@ a { color: var(--accent); text-decoration: none; }
 .dropdown:hover .dropdown-content { display: block; }
 .hero {
   min-height: 78vh;
-  background: linear-gradient(90deg, rgba(3,8,18,.85), rgba(3,8,18,.25)), url("../technology-background.png") center/cover no-repeat;
+  background: linear-gradient(
+90deg,
+rgba(232,238,245,.55),
+rgba(232,238,245,.15)
+),
+url("../technology-background.png")
+center/cover no-repeat;
   position: relative;
   display: flex;
   align-items: center;
