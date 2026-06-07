@@ -95,11 +95,12 @@ center/cover no-repeat;
   font-size: clamp(2.4rem, 5vw, 5.5rem);
   line-height: 1.02;
   margin: 0 0 24px;
+  color: #12365f;
 }
 .hero p {
-  max-width: 780px;
-  font-size: 1.25rem;
-  color: var(--muted);
+    max-width: 780px;
+    font-size: 1.25rem;
+    color: #456b8f;
 }
 .btn {
   display: inline-block;
