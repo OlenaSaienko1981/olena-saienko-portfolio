@@ -1,0 +1,1 @@
+SQL portfolio folders: Credit Risk Analysis, NPL Analysis, LLP and Provisioning, Interest Rate Analysis, Loan Portfolio Analytics, Industry Concentration, Aging Analysis, Reporting Views, Pivot Reporting Queries.
