@@ -1,6 +1,4 @@
-SOURCE EMAIL: VBA - include files into one file
-DATE: 2025-09-19
-WHY SELECTED: FileDialog, selected files, folder recursion, masks, embedding files as OLE icons.
+VBA - include files into one file
 
 Public Sub InsertSelectedFilesAsIcons()
 Dim fd As FileDialog, it As Variant, ws As Worksheet
