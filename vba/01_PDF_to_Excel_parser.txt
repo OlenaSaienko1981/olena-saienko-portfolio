@@ -1,6 +1,4 @@
-SOURCE EMAIL: PDF to Excel - VBA
-DATE: 2026-05-26
-WHY SELECTED: PDF-to-Excel automation, folder loop, clipboard transfer, RegExp parser, separate Sub + Function.
+PDF to Excel - VBA
 
 Option Explicit
 
