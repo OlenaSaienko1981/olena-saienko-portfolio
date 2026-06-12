@@ -1,6 +1,4 @@
-SOURCE EMAIL: VBA - range
-DATE: 2025-10-06
-WHY SELECTED: workbook-wide optimization macro, UsedRange reset, table resizing, safe deletion, helper functions.
+VBA - range
 
 Option Explicit
 
