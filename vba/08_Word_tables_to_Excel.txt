@@ -1,6 +1,4 @@
-SOURCE EMAIL: VBA transfer Word-Excel
-DATE: 2025-08-15
-WHY SELECTED: Word automation from Excel, FileDialog, extracting all Word tables into Excel.
+VBA transfer Word-Excel
 
 Sub ImportWordTablesToExcel()
 Dim wdApp As Object
