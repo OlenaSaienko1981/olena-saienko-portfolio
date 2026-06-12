@@ -1,6 +1,4 @@
-SOURCE EMAIL: VBA - cluster
-DATE: 2025-08-22
-WHY SELECTED: ADODB connection to Active Directory Global Catalog, SQL-like LDAP query, safe cleanup.
+VBA - cluster
 
 Public Function GetDepartment_ByID_GC(empID As String) As String
 On Error GoTo CleanExit
