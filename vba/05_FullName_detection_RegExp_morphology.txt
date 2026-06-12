@@ -1,0 +1,86 @@
+SOURCE EMAIL: VBA - cond formatting
+DATE: 2025-09-10
+WHY SELECTED: RegExp, multilingual name validation, stoplists, surname endings, morphology filters.
+
+Option Explicit
+
+Private Function InList(ByVal s As String, ByVal arr As Variant) As Boolean
+Dim i As Long, u As String
+u = UCase$(s)
+For i = LBound(arr) To UBound(arr)
+    If u = arr(i) Then InList = True: Exit Function
+Next i
+End Function
+
+Private Function LooksLikeSurname(ByVal s As String) As Boolean
+Dim endings As Variant, lastPart As String, parts As Variant, e As Variant
+parts = Split(UCase$(s), "-")
+lastPart = parts(UBound(parts))
+endings = Array( _
+"ENKO","IENKO","YENKO","CHENKO","IYENKO", _
+"KO","UK","YUK","IUK","CHUK", _
+"OV","EV","IV","IN","YN","UN", _
+"SKY","SKI","SKA","SKYI","SKIY", _
+"SON","SEN","MAN","OVICH","EVICH","OVYCH","EVYCH","WICZ","WICH", _
+"BERG","STEIN","OVSKY","EVSKY","OVSKI","EVSKI", _
+"YK","AK","CHYK","SHYN","YSHYN")
+For Each e In endings
+    If Right$(lastPart, Len(e)) = e Then LooksLikeSurname = True: Exit Function
+Next e
+End Function
+
+Private Function IsWordValidNameToken(ByVal w As String, Optional allowHyphen As Boolean = False) As Boolean
+Dim re As Object: Set re = CreateObject("VBScript.RegExp")
+re.IgnoreCase = True: re.Global = False
+re.Pattern = IIf(allowHyphen, "^[A-Za-zА-Яа-яІіЇїЄєҐґ'\-]{3,}$", "^[A-Za-zА-Яа-яІіЇїЄєҐґ']{3,}$")
+IsWordValidNameToken = re.Test(w)
+End Function
+
+Private Function IsWordCasedOrAllCaps(ByVal w As String) As Boolean
+Dim t As String, a As String
+t = WorksheetFunction.Proper(w)
+a = UCase$(w)
+IsWordCasedOrAllCaps = (w = t) Or (w = a)
+End Function
+
+Private Function MorphologyBlocksCommonNouns(ByVal w As String) As Boolean
+Dim u As String: u = UCase$(w)
+Dim suffixes As Variant, suf As Variant
+suffixes = Array("ING","TION","SION","MENT","NESS","SHIP","HOOD","DOM","ISM","IST","ITY","TIES", _
+"LOGY","GRAPHY","METRY","NOMY","PHYSICS","ICS","WARE","WORK","BOARD","CARD","CARDS", _
+"BRANCH","OFFICE")
+For Each suf In suffixes
+    If Right$(u, Len(suf)) = suf Then MorphologyBlocksCommonNouns = True: Exit Function
+Next suf
+End Function
+
+Public Function IsFullName(ByVal txt As String) As Boolean
+Dim s As String, parts As Variant, w1 As String, w2 As String
+Dim stoplist As Variant
+
+s = Trim$(txt)
+If Len(s) = 0 Then Exit Function
+If InStr(s, Chr$(10)) > 0 Or InStr(s, Chr$(13)) > 0 Then Exit Function
+If InStr(s, "&") > 0 Or InStr(s, "/") > 0 Then Exit Function
+If s Like "*[0-9]*" Then Exit Function
+
+If Len(s) - Len(Replace(s, " ", "")) <> 1 Then Exit Function
+parts = Split(s, " ")
+w1 = parts(0): w2 = parts(1)
+
+stoplist = Array("LOCAL","BRANCH","DEBIT","CREDIT","CARD","CARDS","PAPER","MILLS","COMPUTER", _
+"PROGRAM","PROGRAMMING","ACCOUNT","ACCOUNTS","ACCOUNTING","PAYMENT","PAYMENTS", _
+"INVOICE","PROJECT","REPORT","REGION","AREA","TEAM","SERVICE","SERVICES", _
+"DEPARTMENT","CENTRE","CENTER","DIVISION","UNIT","OFFICE","OPERATIONS","FINANCE")
+If InList(w1, stoplist) Or InList(w2, stoplist) Then Exit Function
+
+If MorphologyBlocksCommonNouns(w1) Or MorphologyBlocksCommonNouns(w2) Then Exit Function
+
+If Not IsWordValidNameToken(w1, False) Then Exit Function
+If Not IsWordValidNameToken(w2, True) Then Exit Function
+
+If Not (IsWordCasedOrAllCaps(w1) And IsWordCasedOrAllCaps(w2)) Then Exit Function
+If Not LooksLikeSurname(w2) Then Exit Function
+
+IsFullName = True
+End Function

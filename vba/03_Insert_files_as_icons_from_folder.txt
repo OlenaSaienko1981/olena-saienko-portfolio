@@ -1,0 +1,141 @@
+SOURCE EMAIL: VBA - include files into one file
+DATE: 2025-09-19
+WHY SELECTED: FileDialog, selected files, folder recursion, masks, embedding files as OLE icons.
+
+Public Sub InsertSelectedFilesAsIcons()
+Dim fd As FileDialog, it As Variant, ws As Worksheet
+Dim linkIt As Boolean: linkIt = False
+Dim startLeft As Single: startLeft = 24
+Dim startTop As Single: startTop = 24
+Dim stepX As Single: stepX = 140
+Dim stepY As Single: stepY = 100
+Dim perRow As Long: perRow = 6
+Dim iconW As Single: iconW = 120
+Dim iconH As Single: iconH = 80
+
+Set ws = ActiveSheet
+
+Set fd = Application.FileDialog(msoFileDialogFilePicker)
+With fd
+    .Title = "Pick files to insert as icons"
+    .AllowMultiSelect = True
+    .Filters.Clear
+    .Filters.Add "All files", "*.*"
+    If .Show <> -1 Then Exit Sub
+
+    Application.ScreenUpdating = False
+
+    Dim n As Long: n = 0
+    For Each it In .SelectedItems
+        n = n + 1
+        Dim col As Long, row As Long, x As Single, y As Single
+        col = ((n - 1) Mod perRow)
+        row = ((n - 1) \ perRow)
+        x = startLeft + col * stepX
+        y = startTop + row * stepY
+
+        InsertOneIcon ws, CStr(it), linkIt, x, y, iconW, iconH
+    Next it
+
+    Application.ScreenUpdating = True
+End With
+End Sub
+
+Public Sub InsertFolderFilesAsIcons()
+Dim fdlg As FileDialog, root As String, ws As Worksheet
+Dim includeSubs As VbMsgBoxResult
+Dim patterns As String, arr() As String
+
+Set fdlg = Application.FileDialog(msoFileDialogFolderPicker)
+fdlg.Title = "Pick a folder"
+If fdlg.Show <> -1 Then Exit Sub
+root = fdlg.SelectedItems(1)
+
+includeSubs = MsgBox("Include subfolders?", vbYesNo + vbQuestion, "Scope")
+patterns = InputBox("File masks (use ; to separate). Example:" & vbCrLf & _
+"*.pdf;*.docx;*.xlsx;*.txt", "Masks", "*.*")
+If Len(Trim$(patterns)) = 0 Then Exit Sub
+arr = Split(patterns, ";")
+
+Set ws = ActiveSheet
+Application.ScreenUpdating = False
+
+Dim files As Collection: Set files = CollectFiles(root, (includeSubs = vbYes), arr)
+If files.Count = 0 Then
+    MsgBox "No files matched.", vbInformation
+    GoTo Done
+End If
+
+Dim i As Long, linkIt As Boolean: linkIt = False
+Dim startLeft As Single: startLeft = 24
+Dim startTop As Single: startTop = 24
+Dim stepX As Single: stepX = 140
+Dim stepY As Single: stepY = 100
+Dim perRow As Long: perRow = 6
+Dim iconW As Single: iconW = 120
+Dim iconH As Single: iconH = 80
+
+For i = 1 To files.Count
+    Dim col As Long, row As Long, x As Single, y As Single
+    col = ((i - 1) Mod perRow)
+    row = ((i - 1) \ perRow)
+    x = startLeft + col * stepX
+    y = startTop + row * stepY
+
+    InsertOneIcon ws, CStr(files(i)), linkIt, x, y, iconW, iconH
+Next i
+
+Done:
+Application.ScreenUpdating = True
+End Sub
+
+Private Sub InsertOneIcon(ByVal ws As Worksheet, ByVal filePath As String, _
+ByVal linkIt As Boolean, _
+ByVal x As Single, ByVal y As Single, _
+ByVal w As Single, ByVal h As Single)
+
+On Error Resume Next
+Dim ole As OLEObject
+Set ole = ws.OLEObjects.Add( _
+    Filename:=filePath, _
+    Link:=linkIt, _
+    DisplayAsIcon:=True, _
+    IconLabel:=Dir$(filePath), _
+    Left:=x, Top:=y, Width:=w, Height:=h)
+
+If Err.Number <> 0 Then
+    Debug.Print "Failed to insert: " & filePath & " | " & Err.Description
+    Err.Clear
+End If
+On Error GoTo 0
+End Sub
+
+Private Function CollectFiles(ByVal root As String, ByVal includeSubs As Boolean, _
+ByVal masks As Variant) As Collection
+
+Dim fso As Object, fldr As Object
+Set CollectFiles = New Collection
+Set fso = CreateObject("Scripting.FileSystemObject")
+Set fldr = fso.GetFolder(root)
+
+Dim m As Variant, f As Object, subf As Object
+
+For Each f In fldr.Files
+    For Each m In masks
+        If LCase(fso.GetFileName(f)) Like LCase(Trim$(m)) Then
+            CollectFiles.Add f.Path
+            Exit For
+        End If
+    Next m
+Next f
+
+If includeSubs Then
+    For Each subf In fldr.SubFolders
+        Dim child As Collection, it As Variant
+        Set child = CollectFiles(subf.Path, True, masks)
+        For Each it In child
+            CollectFiles.Add it
+        Next it
+    Next subf
+End If
+End Function

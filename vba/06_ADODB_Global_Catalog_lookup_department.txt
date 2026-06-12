@@ -1,0 +1,55 @@
+SOURCE EMAIL: VBA - cluster
+DATE: 2025-08-22
+WHY SELECTED: ADODB connection to Active Directory Global Catalog, SQL-like LDAP query, safe cleanup.
+
+Public Function GetDepartment_ByID_GC(empID As String) As String
+On Error GoTo CleanExit
+If Len(empID) = 0 Then Exit Function
+
+Dim cn As Object, cmd As Object, rs As Object
+Dim s As String: s = EscapeSql(empID)
+
+Set cn = CreateObject("ADODB.Connection")
+cn.Open "Provider=ADsDSOObject;"
+
+Set cmd = CreateObject("ADODB.Command")
+Set cmd.ActiveConnection = cn
+cmd.Properties("Page Size") = 1000
+cmd.Properties("Timeout") = 30
+cmd.Properties("Cache Results") = False
+cmd.Properties("Searchscope") = 2
+
+cmd.CommandText = _
+"SELECT department, displayName FROM 'GC://'" & _
+" WHERE objectCategory='person' AND objectClass='user' AND (" & _
+"employeeID='" & s & "' OR " & _
+"employeeNumber='" & s & "' OR " & _
+"extensionAttribute1='" & s & "' OR " & _
+"extensionAttribute2='" & s & "' OR " & _
+"extensionAttribute3='" & s & "'" & _
+")"
+
+Set rs = cmd.Execute
+If Not rs Is Nothing Then
+    If Not rs.EOF Then
+        GetDepartment_ByID_GC = NzStr(rs.Fields("department").Value)
+        If Len(GetDepartment_ByID_GC) = 0 Then
+            GetDepartment_ByID_GC = NzStr(rs.Fields("displayName").Value)
+        End If
+    End If
+    rs.Close
+End If
+
+CleanExit:
+On Error Resume Next
+If Not rs Is Nothing Then If rs.State <> 0 Then rs.Close
+If Not cn Is Nothing Then If cn.State <> 0 Then cn.Close
+End Function
+
+Private Function EscapeSql(ByVal s As String) As String
+EscapeSql = Replace$(s, "'", "''")
+End Function
+
+Private Function NzStr(v) As String
+If IsNull(v) Then NzStr = "" Else NzStr = CStr(v)
+End Function

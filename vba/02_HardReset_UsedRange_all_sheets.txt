@@ -1,0 +1,95 @@
+SOURCE EMAIL: VBA - range
+DATE: 2025-10-06
+WHY SELECTED: workbook-wide optimization macro, UsedRange reset, table resizing, safe deletion, helper functions.
+
+Option Explicit
+
+Sub HardResetUsedRange_V3()
+Dim ws As Worksheet
+Dim lastRow As Long, lastCol As Long
+Dim dummy As String
+
+Application.ScreenUpdating = False
+Application.Calculation = xlCalculationManual
+Application.EnableEvents = False
+Application.DisplayAlerts = False
+
+For Each ws In ThisWorkbook.Worksheets
+    If Application.WorksheetFunction.CountA(ws.Cells) = 0 Then
+        dummy = ws.Cells(1, 1).Address(False, False)
+        GoTo NextWs
+    End If
+
+    lastRow = LastUsedRow(ws)
+    lastCol = LastUsedCol(ws)
+
+    On Error Resume Next
+    ws.AutoFilterMode = False
+    On Error GoTo 0
+
+    ShrinkAllTables ws
+    DeleteRowsBeyond ws, lastRow
+    DeleteColsBeyond ws, lastCol
+
+    dummy = ws.UsedRange.Address(False, False)
+
+NextWs:
+Next ws
+
+Cleanup:
+Application.DisplayAlerts = True
+Application.Calculation = xlCalculationAutomatic
+Application.EnableEvents = True
+Application.ScreenUpdating = True
+
+MsgBox "UsedRange reset complete. Save, close, and reopen the workbook."
+End Sub
+
+Private Function LastUsedRow(ws As Worksheet) As Long
+Dim f As Range
+Set f = ws.Cells.Find(What:="*", LookIn:=xlFormulas, _
+SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
+LastUsedRow = IIf(f Is Nothing, 1, f.Row)
+End Function
+
+Private Function LastUsedCol(ws As Worksheet) As Long
+Dim f As Range
+Set f = ws.Cells.Find(What:="*", LookIn:=xlFormulas, _
+SearchOrder:=xlByColumns, SearchDirection:=xlPrevious)
+LastUsedCol = IIf(f Is Nothing, 1, f.Column)
+End Function
+
+Private Sub ShrinkAllTables(ws As Worksheet)
+Dim lo As ListObject, loRng As Range, f As Range
+Dim tLastR As Long, tLastC As Long
+
+For Each lo In ws.ListObjects
+    Set loRng = lo.Range
+
+    Set f = loRng.Find(What:="*", LookIn:=xlFormulas, _
+    SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
+    tLastR = IIf(f Is Nothing, loRng.Row, f.Row)
+
+    Set f = loRng.Find(What:="*", LookIn:=xlFormulas, _
+    SearchOrder:=xlByColumns, SearchDirection:=xlPrevious)
+    tLastC = IIf(f Is Nothing, loRng.Column + loRng.Columns.Count - 1, f.Column)
+
+    On Error Resume Next
+    lo.Resize ws.Range(ws.Cells(loRng.Row, loRng.Column), ws.Cells(tLastR, tLastC))
+    On Error GoTo 0
+Next lo
+End Sub
+
+Private Sub DeleteRowsBeyond(ws As Worksheet, lastRow As Long)
+Dim firstDel As Long: firstDel = lastRow + 1
+If firstDel <= ws.Rows.Count Then
+    ws.Range(ws.Cells(firstDel, 1), ws.Cells(ws.Rows.Count, 1)).EntireRow.Delete
+End If
+End Sub
+
+Private Sub DeleteColsBeyond(ws As Worksheet, lastCol As Long)
+Dim firstDel As Long: firstDel = lastCol + 1
+If firstDel <= ws.Columns.Count Then
+    ws.Range(ws.Cells(1, firstDel), ws.Cells(1, ws.Columns.Count)).EntireColumn.Delete
+End If
+End Sub

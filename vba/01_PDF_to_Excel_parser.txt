@@ -1,0 +1,108 @@
+SOURCE EMAIL: PDF to Excel - VBA
+DATE: 2026-05-26
+WHY SELECTED: PDF-to-Excel automation, folder loop, clipboard transfer, RegExp parser, separate Sub + Function.
+
+Option Explicit
+
+Sub ParseFirstTableFromPDFs()
+
+Dim fs As String, f As String, s As String, InvoiceNo As String
+Dim r As Long, x As Long, lastRow As Long
+Dim sh As Worksheet, rw As Worksheet
+
+Set sh = Sheets("Result")
+Set rw = Sheets("Raw")
+
+fs = "G:\Corporate reporting\FDR\SMART\Upload\Poland invoices_PowerQuery\Invoices\"
+f = Dir(fs & "*.pdf")
+
+sh.Cells.Clear
+sh.Range("A1:H1") = Array("Invoice", "Lp", "Nazwa towaru lub usługi", "Cena jedn. netto", "Ilość", "Stawka podatku", "Wartość sprzedaży netto", "Wartość sprzedaży vat")
+r = 2
+
+Do While f <> ""
+
+rw.Cells.Clear
+InvoiceNo = Replace(f, ".pdf", "")
+
+ThisWorkbook.FollowHyperlink fs & f
+Application.Wait Now + TimeValue("00:00:05")
+
+On Error Resume Next
+AppActivate f
+SendKeys "^a", True
+SendKeys "^c", True
+On Error GoTo 0
+
+Application.Wait Now + TimeValue("00:00:02")
+
+AppActivate Application.Caption
+rw.Activate
+rw.Range("A1").Select
+
+On Error Resume Next
+rw.Range("A1").PasteSpecial xlPasteValues
+If Err.Number <> 0 Then
+Err.Clear
+SendKeys "^v", True
+Application.Wait Now + TimeValue("00:00:02")
+End If
+On Error GoTo 0
+
+If Application.WorksheetFunction.CountA(rw.Cells) > 0 Then
+lastRow = rw.Cells.Find("*", , , , xlByRows, xlPrevious).Row
+
+For x = 1 To lastRow
+s = Join(Application.Transpose(Application.Transpose(rw.Range(rw.Cells(x, 1), rw.Cells(x, 50)).Value)), " ")
+s = Replace(s, Chr(160), " ")
+s = Application.Trim(s)
+
+sh.Cells(x + 1, 10) = s
+
+If ParseRow(s, sh, r, InvoiceNo) Then
+sh.Cells(x + 1, 11) = "MATCH"
+r = r + 1
+End If
+Next x
+End If
+
+f = Dir
+
+Loop
+
+MsgBox r - 2 & " rows parsed"
+
+End Sub
+
+Function ParseRow(ByVal s As String, sh As Worksheet, ByVal r As Long, ByVal InvoiceNo As String) As Boolean
+
+Dim re As Object, m As Object
+
+s = Replace(s, Chr(160), " ")
+s = Replace(s, vbTab, " ")
+s = Replace(s, vbCr, " ")
+s = Replace(s, vbLf, " ")
+s = Application.Trim(s)
+
+Set re = CreateObject("VBScript.RegExp")
+re.Global = False
+re.IgnoreCase = True
+
+re.Pattern = "^\s*(\d+)\s+(.+?)\s+([0-9]+[,.][0-9]{2})\s+([0-9]+[,.][0-9]+)\s+(\d{1,2}%?)\s+([0-9]+[,.][0-9]{2})\s+([0-9]+[,.][0-9]{2})"
+
+If Not re.Test(s) Then Exit Function
+
+Set m = re.Execute(s)(0)
+
+sh.Cells(r, 1) = InvoiceNo
+sh.Cells(r, 2) = m.SubMatches(0)
+sh.Cells(r, 3) = m.SubMatches(1)
+sh.Cells(r, 4) = m.SubMatches(2)
+sh.Cells(r, 5) = m.SubMatches(3)
+sh.Cells(r, 6) = m.SubMatches(4)
+sh.Cells(r, 7) = m.SubMatches(5)
+sh.Cells(r, 8) = m.SubMatches(6)
+
+ParseRow = True
+
+End Function

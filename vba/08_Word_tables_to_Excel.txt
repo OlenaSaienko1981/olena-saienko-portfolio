@@ -1,0 +1,40 @@
+SOURCE EMAIL: VBA transfer Word-Excel
+DATE: 2025-08-15
+WHY SELECTED: Word automation from Excel, FileDialog, extracting all Word tables into Excel.
+
+Sub ImportWordTablesToExcel()
+Dim wdApp As Object
+Dim wdDoc As Object
+Dim fd As FileDialog
+Dim tbl As Object
+Dim ws As Worksheet
+Dim pasteRow As Long
+
+Set fd = Application.FileDialog(msoFileDialogFilePicker)
+fd.Title = "Select a Word document"
+fd.Filters.Clear
+fd.Filters.Add "Word Documents", "*.docx; *.doc"
+If fd.Show <> -1 Then Exit Sub
+
+Set wdApp = CreateObject("Word.Application")
+wdApp.Visible = False
+
+Set wdDoc = wdApp.Documents.Open(fd.SelectedItems(1), ReadOnly:=True)
+
+Set ws = ThisWorkbook.Sheets.Add
+ws.Name = "Word_Tables_" & Format(Now, "hhmmss")
+pasteRow = 1
+
+For Each tbl In wdDoc.Tables
+    tbl.Range.Copy
+    ws.Paste Destination:=ws.Cells(pasteRow, 1)
+    pasteRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row + 2
+Next tbl
+
+wdDoc.Close False
+wdApp.Quit
+Set wdDoc = Nothing
+Set wdApp = Nothing
+
+MsgBox "Tables imported to sheet '" & ws.Name & "'. You can now load it into Power Query.", vbInformation
+End Sub

@@ -1,0 +1,29 @@
+SOURCE EMAIL: VBA - FX rate
+DATE: 2025-08-15
+WHY SELECTED: API call, JSON parsing, NBU exchange-rate service.
+
+Sub GetNBU_Rate()
+Dim http As Object
+Dim JSON As Object
+Dim URL As String
+Dim currency As String
+Dim myDate As String
+Dim rawJSON As String
+
+currency = Range("B2").Value
+myDate = Format(Range("A2").Value, "yyyymmdd")
+
+URL = "https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?valcode=" & currency & "&date=" & myDate & "&json"
+
+Set http = CreateObject("MSXML2.XMLHTTP")
+http.Open "GET", URL, False
+http.Send
+
+Set JSON = JsonConverter.ParseJson(http.ResponseText)
+
+If JSON.Count > 0 Then
+    Range("C2").Value = JSON(1)("rate")
+Else
+    Range("C2").Value = "No data"
+End If
+End Sub
