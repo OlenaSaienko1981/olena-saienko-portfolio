@@ -1,6 +1,4 @@
-SOURCE EMAIL: VBA - cond formatting
-DATE: 2025-09-10
-WHY SELECTED: RegExp, multilingual name validation, stoplists, surname endings, morphology filters.
+VBA - cond formatting
 
 Option Explicit
 
