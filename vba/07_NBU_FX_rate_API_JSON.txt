@@ -1,6 +1,4 @@
-SOURCE EMAIL: VBA - FX rate
-DATE: 2025-08-15
-WHY SELECTED: API call, JSON parsing, NBU exchange-rate service.
+VBA - FX rate
 
 Sub GetNBU_Rate()
 Dim http As Object
